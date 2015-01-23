@@ -1,5 +1,6 @@
 #!/usr/bin/python
 import json
+import os
 import sys
 import codecs
 from datetime import date
@@ -7,7 +8,7 @@ from pprint import pprint
 from string import Template
 
 def read(input_file):
-	json_file = open(input_file, 'r')
+	json_file = codecs.open(input_file, 'r', 'utf-8')
 	data = json.load(json_file)
 	json_file.close()
 	return data
@@ -85,11 +86,11 @@ published = filter(lambda p: p != None, map(is_published, posts))
 drafts = filter(lambda p: p != None, map(is_draft, posts))
 
 ### create files
-s = Template("""
----
-title: $title
+s = Template("""---
+title: '$title'
 date: $isodate
 tags: $tags
+layout: post
 ---
 $markdown
 """)
