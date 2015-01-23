@@ -2,6 +2,7 @@
 import json
 import sys
 import codecs
+from datetime import date
 from pprint import pprint
 from string import Template
 
@@ -44,14 +45,31 @@ def published(post):
 def uuid(post):
 	return post["uuid"]
 
-def tag_for_post(post, tags, posts_tags):
-	myId = post["id"]
-#	print "Searching for " + str(myId) + " in " + str(posts_tags)
-	post_tag = filter(lambda p: p["post_id"] == myId, posts_tags)
-#	print "Found " + str(post_tag)
-	tag_id = post_tag[0]["tag_id"]
-	print "Returning tag for tag_id " + str(tag_id)
-	return filter(lambda tag: tag != None, map(lambda tag: tag if tag["id"] == tag_id else None, tags))
+def tags_for_post(post, tags, posts_tags):
+	"""Returns the list of tags for the given post."""
+	list_of_tags = []
+	post_tags = filter(lambda p: p["post_id"] == post["id"], posts_tags)
+	for post_tag in post_tags:
+		# get tag
+		tag_id = post_tag["tag_id"]
+		tag = filter(lambda tag: tag["id"] == tag_id, tags)[0]
+		#add to tag list
+		list_of_tags.append(tag["slug"])
+	return list_of_tags
+
+def write(prefix, post):
+	"""Writes the given post to a file."""
+	# add tags to post
+	post['tags'] = ",".join(tags_for_post(post, tags, posts_tags))
+	if post["published_at"]:
+		d = date.fromtimestamp(post["published_at"]/1000)
+	else:
+		d = date.today()
+	slug = post["slug"]
+	post["isodate"] = d.strftime('%Y-%m-%d %H:%M:%S %z')
+	fpost = codecs.open(prefix + d.isoformat() + '-' + slug + '.markdown', 'w', 'utf-8')
+	fpost.write(s.substitute(post))
+	fpost.close()
 
 input_file = sys.argv[1]
 print "Reading data from " + input_file
@@ -66,29 +84,22 @@ posts_tags = data["db"][0]["data"]["posts_tags"]
 published = filter(lambda p: p != None, map(is_published, posts))
 drafts = filter(lambda p: p != None, map(is_draft, posts))
 
-
 ### create files
-#prefix = '_posts/'
-prefix = ''
 s = Template("""
 ---
 title: $title
-date: $published_at
+date: $isodate
+tags: $tags
 ---
 $markdown
 """)
 
 print "Published: " + str(len(published)) + " Draft: " + str(len(drafts))
 
-# TODO loop over published, create _posts/YYYY-MM-DD-'slug'.markdown
-#for post in posts:
-post = posts[0]
-pprint(post)
-date = str(post["published_at"])
-slug = slug(post)
-
-fpost = codecs.open(prefix + date + '-' + slug + '.markdown', 'w', 'utf-8')
-fpost.write(s.substitute(post))
-fpost.close()
+# loop over published, create _posts/YYYY-MM-DD-'slug'.markdown
+for post in published:
+	write('_posts/', post)
 # TODO loop over drafts, create _drafts/YYYY-MM-DD-'slug'.markdown
+for post in drafts:
+	write('_drafts/', post)
 
