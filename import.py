@@ -61,7 +61,7 @@ def tags_for_post(post, tags, posts_tags):
 def write(prefix, post):
 	"""Writes the given post to a file."""
 	# add tags to post
-	post['tags'] = ",".join(tags_for_post(post, tags, posts_tags))
+	post['tags'] = " ".join(tags_for_post(post, tags, posts_tags))
 	if post["published_at"]:
 		d = date.fromtimestamp(post["published_at"]/1000)
 	else:
