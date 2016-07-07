@@ -1,6 +1,7 @@
 #!/usr/bin/python
 import json
 import os
+import errno
 import sys
 import codecs
 from datetime import date
@@ -72,6 +73,13 @@ def write(prefix, post):
 	fpost.write(s.substitute(post))
 	fpost.close()
 
+def make_sure_path_exists(path):
+  try:
+    os.makedirs(path)
+  except OSError as exception:
+    if exception.errno != errno.EEXIST:
+      raise
+
 input_file = sys.argv[1]
 print "Reading data from " + input_file
 data = read(input_file)
@@ -98,9 +106,14 @@ $markdown
 print "Published: " + str(len(published)) + " Draft: " + str(len(drafts))
 
 # loop over published, create _posts/YYYY-MM-DD-'slug'.markdown
+folder_posts = '_posts/'
+make_sure_path_exists(folder_posts)
 for post in published:
-	write('_posts/', post)
-# TODO loop over drafts, create _drafts/YYYY-MM-DD-'slug'.markdown
+	write(folder_posts, post)
+
+# loop over drafts, create _drafts/YYYY-MM-DD-'slug'.markdown
+folder_drafts = '_drafts/'
+make_sure_path_exists(folder_drafts)
 for post in drafts:
-	write('_drafts/', post)
+	write(folder_drafts, post)
 
